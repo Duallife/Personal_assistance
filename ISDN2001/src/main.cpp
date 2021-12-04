@@ -49,7 +49,6 @@ static void sw_event_cb(lv_event_t * e);
 void time_task(lv_timer_t * task);
 static void load_scr1();
 static void time_cb(lv_event_t * e);
-int test = 0;
 
 void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p )
 {
@@ -154,7 +153,6 @@ void loop()
 {
     lv_timer_handler(); /* let the GUI do its work */
     delay( 5 );
-    test++;
 }
 
 static void load_scr1(){
@@ -208,24 +206,45 @@ static void load_scr1(){
 
 }
 //support functions
+static void back_cb(lv_event_t * e);
 lv_obj_t * scr2;
 
 void load_scr2(){
     scr2 = lv_obj_create(NULL);
     lv_scr_load(scr2);
 
+    lv_obj_t * back = lv_btn_create(scr2);
+    lv_obj_center(back);
+    lv_obj_set_pos(back, 0, -50);
+    lv_obj_add_event_cb(back, back_cb, LV_EVENT_ALL, NULL);
+    
+
     lv_obj_t * time = lv_label_create(scr2);
     lv_timer_t * timer = lv_timer_create(time_task, 1000, time);
     lv_timer_ready(timer);
 }
+
+static void back_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+
+    if(code == LV_EVENT_CLICKED) {
+        load_scr1();
+    }
+}
+
 
 void time_task(lv_timer_t * task){
     
     lv_obj_t * time = (lv_obj_t*)task->user_data;
     timeClient.update();
     lv_obj_center(time);
-    lv_obj_set_pos(time,0,100);
     lv_label_set_text(time, timeClient.getFormattedTime().c_str());
+    // static lv_style_t clock_style;
+    // lv_style_init(&clock_style);
+
+    // lv_style_set_text_font(&clock_style, LV_FONT_MONTSERRAT_48);
+    // lv_obj_add_style(time, &clock_style, 0);
 }
 
 static void time_cb(lv_event_t * e)
