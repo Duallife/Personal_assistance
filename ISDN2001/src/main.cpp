@@ -1,153 +1,15 @@
-#include <Arduino.h>
-#include <lvgl.h>
-#include <TFT_eSPI.h>
-
-#include <WiFi.h>
-#include <WifiUdp.h>
-#include <NTPClient.h>
-// #include <cstring>
-/*If you want to use the LVGL examples,
-  make sure to install the lv_examples Arduino library
-  and uncomment the following line.
-#include <lv_examples.h>
-*/
-
-/*Change to your screen resolution*/
-static const uint16_t screenWidth  = 240;
-static const uint16_t screenHeight = 320;
-
-static lv_disp_draw_buf_t draw_buf;
-static lv_color_t buf[ screenWidth * 10 ];
-
-TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
-
-//clock
-const char* ssid       = "Xie6_Wi-Fi5";
-const char* password   = "55375157";
-
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000 );
+///ISDN2001/2
+#include "setting.h"
+#include "scr.h"
 
 static void event_handler(lv_event_t * e);
-void my_touchpad_read( lv_indev_drv_t * indev_driver, lv_indev_data_t * data );
-void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p );
 static void slider_event_cb(lv_event_t * e);
 static lv_obj_t * slider_label;
-
 static void anim_x_cb(void * var, int32_t v);
 static void sw_event_cb(lv_event_t * e);
-/* Display flushing */
-// void * tick_thread (void *args)
-// {
-//       while(1) {
-//         usleep(5*1000);   /*Sleep for 5 millisecond*/
-//         lv_tick_inc(5);      /*Tell LVGL that 5 milliseconds were elapsed*/
-//     }
-// }
 
-// lv_obj_t * screen = lv_obj_create(NULL);
 void time_task(lv_timer_t * task);
-static void load_scr1();
 static void time_cb(lv_event_t * e);
-
-void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p )
-{
-    uint32_t w = ( area->x2 - area->x1 + 1 );
-    uint32_t h = ( area->y2 - area->y1 + 1 );
-
-    tft.startWrite();
-    tft.setAddrWindow( area->x1, area->y1, w, h );
-    tft.pushColors( ( uint16_t * )&color_p->full, w * h, true );
-    tft.endWrite();
-
-    lv_disp_flush_ready( disp );
-}
-
-/*Read the touchpad*/
-void my_touchpad_read( lv_indev_drv_t * indev_driver, lv_indev_data_t * data )
-{
-    uint16_t touchX, touchY;
-    
-    bool touched = tft.getTouch( &touchX, &touchY, 600 );
-
-    if( !touched )
-    {
-        data->state = LV_INDEV_STATE_REL;
-        
-    }
-    else
-    {
-        data->state = LV_INDEV_STATE_PR;
-
-        /*Set the coordinates*/
-        data->point.x = touchX;
-        data->point.y = touchY;
-
-        // Serial.print( "Data x " );
-        // Serial.println( touchX );
-
-        // Serial.print( "Data y " );
-        // Serial.println( touchY );
-    }
-}
-
-void setup()
-{
-    Serial.begin( 115200 ); /* prepare for possible serial debug */
-
-    // String LVGL_Arduino = "Hello Arduino! ";
-    // LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
-
-    // Serial.println( LVGL_Arduino );
-    // Serial.println( "I am LVGL_Arduino" );
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println(" CONNECTED");
-
-    timeClient.begin();
-
-    lv_init();
-
-    tft.begin();          /* TFT init */
-    tft.setRotation( 2 ); /* Landscape orientation, flipped */
-
-    /*Set the touchscreen calibration data,
-     the actual data for your display can be aquired using
-     the Generic -> Touch_calibrate example from the TFT_eSPI library*/
-    uint16_t calData[5] = { 437, 3509, 269, 3588, 0 };
-    tft.setTouch(calData);
-
-    lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * 10 );
-
-    /*Initialize the display*/
-    static lv_disp_drv_t disp_drv;
-    lv_disp_drv_init( &disp_drv );
-    /*Change the following line to your display resolution*/
-    disp_drv.hor_res = screenWidth;
-    disp_drv.ver_res = screenHeight;
-    disp_drv.flush_cb = my_disp_flush;
-    disp_drv.draw_buf = &draw_buf;
-    lv_disp_drv_register( &disp_drv );
-
-    /*Initialize the (dummy) input device driver*/
-    static lv_indev_drv_t indev_drv;
-    lv_indev_drv_init( &indev_drv );
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = my_touchpad_read;
-    lv_indev_drv_register( &indev_drv );
-
-    /* Object creation */
-    // lv_obj_t *label = lv_label_create( lv_scr_act() );
-    // lv_label_set_text( label, LVGL_Arduino.c_str() );
-    // lv_obj_align( label, LV_ALIGN_CENTER, 0, 0 );
-
-    load_scr1();
-
-    Serial.println( "Setup done" );
-}
 
 void loop()
 {
@@ -155,7 +17,7 @@ void loop()
     delay( 5 );
 }
 
-static void load_scr1(){
+void load_scr1(){
     lv_obj_t * scr1 = lv_obj_create(NULL);
     lv_scr_load(scr1);
 
@@ -164,6 +26,7 @@ static void load_scr1(){
     lv_obj_set_align(btn1, LV_ALIGN_CENTER);
 
     lv_obj_t * label = lv_label_create(btn1);
+    
     lv_label_set_text(label, "Button");
     lv_obj_center(label);
 /////////////////////////////////////////////
@@ -220,6 +83,13 @@ void load_scr2(){
     
 
     lv_obj_t * time = lv_label_create(scr2);
+
+    static lv_style_t clock_style;
+    lv_style_init(&clock_style);
+    lv_style_set_text_color(&clock_style, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_text_font(&clock_style, &lv_font_montserrat_36);
+    lv_obj_add_style(time, &clock_style, 0);
+
     lv_timer_t * timer = lv_timer_create(time_task, 1000, time);
     lv_timer_ready(timer);
 }
@@ -239,7 +109,8 @@ void time_task(lv_timer_t * task){
     lv_obj_t * time = (lv_obj_t*)task->user_data;
     timeClient.update();
     lv_obj_center(time);
-    lv_label_set_text(time, timeClient.getFormattedTime().c_str());
+    lv_label_set_text(time, timeClient.getFormattedTime().c_str() );
+    
     // static lv_style_t clock_style;
     // lv_style_init(&clock_style);
 
